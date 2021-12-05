@@ -32,6 +32,8 @@ int acknum;
 int nextSeqNoA = 1;
 int nextSeqNoB = 1;
 int WINDOWSIZE = 1;
+float RTT = 10000.0;
+int timerStarted = 0;
 
 /* To calculate checkSum for packet*/
 int checkSum(struct pkt* packet){
@@ -87,10 +89,12 @@ void sendNxtPkt(int flag) {
     cout << "Sending packet seq -> " << packet.seqnum << endl;
     pSend(flag, packet);
     msgQueue.erase(msgQueue.begin());
-    if(seqnum == base){
+    // if(seqnum == base){
+      if(timerStarted == 0) {
       // To start A's Timer
-      cout << " ########################################################TIMER STARTED FOR A WITH SIM TIME >>>> " << get_sim_time() <<endl;
-      starttimer(flag,get_sim_time());
+      cout << " ########################################################TIMER STARTED FOR A WITH SIM TIME >>>> " << RTT <<endl;
+      starttimer(flag,RTT);
+      timerStarted = 1;
     }
 }
 
@@ -119,14 +123,20 @@ void A_input(struct pkt packet)
       if (msgBufferA.size() > 0 && acknum == msgBufferA.begin()->seqnum){
         cout << "REMOVE FROM BUFFER " << endl;
         stoptimer(0);
+        timerStarted = 0;
         base += 1;
         cout << "ACK RECIEVED: " << packet.acknum << endl;
         msgBufferA.erase(msgBufferA.begin());
-        if((nextSeqNoA - base) < WINDOWSIZE && msgQueue.size() > 0){
+        if((nextSeqNoA - base) < WINDOWSIZE){
           cout << "Next Packet Sent : " << endl;
-          sendNxtPkt(0);
-          cout << "NEXT -----------------------------------------------TIME RESTARTED-----------------------------------------------" << endl;
-          starttimer(0,get_sim_time());
+          if (msgQueue.size() > 0) {
+            sendNxtPkt(0);
+          };
+          if(timerStarted == 0){
+            starttimer(0,RTT);
+            timerStarted = 1;
+            cout << "NEXT -----------------------------------------------TIME RESTARTED-----------------------------------------------" << endl;
+          }
         }
       }
   }
@@ -149,9 +159,9 @@ void A_timerinterrupt()
       msgQueue.erase(msgQueue.begin());
       nextSeqNoA = nextSeqNoA + 1;
       if (restarted == 0){
-        // stoptimer(0);
         cout << "-----------------------------------------------TIME RESTARTED-----------------------------------------------" << endl;
-        starttimer(0,get_sim_time());
+        starttimer(0,RTT);
+        timerStarted = 1;
         restarted = 1;
       }
     }else {
