@@ -32,7 +32,7 @@ int acknum;
 int nextSeqNoA = 1;
 int nextSeqNoB = 1;
 int WINDOWSIZE = 1;
-float RTT = 10000.0;
+float RTT = 100.0;
 int timerStarted = 0;
 
 /* To calculate checkSum for packet*/
